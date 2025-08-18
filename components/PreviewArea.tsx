@@ -1,0 +1,117 @@
+"use client";
+
+import React, { useRef } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
+import { PreviewAreaProps } from '@/types';
+import html2canvas from 'html2canvas';
+
+export default function PreviewArea({ 
+  imageSrc, 
+  gradient, 
+  sizing, 
+  onDownload 
+}: PreviewAreaProps) {
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  const generateGradientStyle = () => {
+    const direction = gradient.direction === 'custom' 
+      ? `${gradient.customDegree}deg` 
+      : gradient.direction;
+    
+    return {
+      background: `linear-gradient(${direction}, ${gradient.startColor}, ${gradient.midColor}, ${gradient.endColor})`,
+      width: `${sizing.width}px`,
+      height: `${sizing.height}px`,
+    };
+  };
+
+  const handleDownload = async () => {
+    if (!canvasRef.current) return;
+
+    try {
+      const canvas = await html2canvas(canvasRef.current, {
+        backgroundColor: null,
+        width: sizing.width,
+        height: sizing.height,
+        scale: 1,
+        useCORS: true,
+        allowTaint: false,
+      });
+
+      const link = document.createElement('a');
+      link.download = `gradient-image-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      onDownload();
+    } catch (error) {
+      console.error('Error generating image:', error);
+      alert('Failed to generate image. Please try again.');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">Live Preview</h3>
+        <Button 
+          onClick={handleDownload}
+          disabled={!imageSrc}
+          className="bg-gray-900 hover:bg-gray-800 text-white disabled:bg-gray-400"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Download Image
+        </Button>
+      </div>
+
+      <Card className="p-6 border border-gray-200">
+        <div className="flex justify-center">
+          <div className="border-2 border-dashed border-gray-300 p-4 bg-white">
+            <div
+              ref={canvasRef}
+              className="relative flex items-center justify-center overflow-hidden"
+              style={generateGradientStyle()}
+            >
+              {imageSrc ? (
+                <img
+                  src={imageSrc}
+                  alt="Uploaded"
+                  className="max-w-full max-h-full object-contain"
+                  style={{
+                    maxWidth: `${sizing.width}px`,
+                    maxHeight: `${sizing.height}px`,
+                  }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-white text-opacity-75 space-y-2">
+                  <div className="w-16 h-16 border-2 border-white border-opacity-50 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">🖼️</span>
+                  </div>
+                  <p className="text-sm font-medium">Upload an image to preview</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Canvas Info */}
+        <div className="mt-4 text-center">
+          <div className="inline-flex items-center space-x-4 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-full">
+            <span>Canvas: {sizing.width} × {sizing.height}px</span>
+            <span>•</span>
+            <span>
+              Gradient: {gradient.direction === 'custom' 
+                ? `${gradient.customDegree}°` 
+                : gradient.direction.replace('deg', '°')
+              }
+            </span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
