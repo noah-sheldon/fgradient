@@ -44,7 +44,9 @@ export default function SizingControls({
   };
 
   const handleWidthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newWidth = parseInt(e.target.value) || 100;
+    const newWidth = parseInt(e.target.value);
+    if (isNaN(newWidth)) return;
+    
     const clampedWidth = Math.max(100, Math.min(2000, newWidth));
     let newHeight = sizing.height;
     
@@ -60,7 +62,9 @@ export default function SizingControls({
   };
 
   const handleHeightInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newHeight = parseInt(e.target.value) || 100;
+    const newHeight = parseInt(e.target.value);
+    if (isNaN(newHeight)) return;
+    
     const clampedHeight = Math.max(100, Math.min(2000, newHeight));
     let newWidth = sizing.width;
     
@@ -74,10 +78,29 @@ export default function SizingControls({
       height: clampedHeight,
     });
   };
+
   const handleAspectRatioToggle = (checked: boolean) => {
     onSizingChange({
       ...sizing,
       lockAspectRatio: checked,
+    });
+  };
+
+  const handleBorderRadiusChange = (values: number[]) => {
+    onSizingChange({
+      ...sizing,
+      borderRadius: values[0],
+    });
+  };
+
+  const handleBorderRadiusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newRadius = parseInt(e.target.value);
+    if (isNaN(newRadius)) return;
+    
+    const clampedRadius = Math.max(0, Math.min(100, newRadius));
+    onSizingChange({
+      ...sizing,
+      borderRadius: clampedRadius,
     });
   };
 
@@ -162,12 +185,46 @@ export default function SizingControls({
           </div>
         </div>
 
+        {/* Border Radius Control */}
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <Label className="text-sm font-medium text-gray-800">Border Radius (Image & Gradient)</Label>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={sizing.borderRadius}
+                onChange={handleBorderRadiusInputChange}
+                className="w-20 h-8 text-xs font-mono text-center"
+              />
+              <span className="text-xs text-gray-500">px</span>
+            </div>
+          </div>
+          <Slider
+            value={[sizing.borderRadius]}
+            onValueChange={handleBorderRadiusChange}
+            min={0}
+            max={100}
+            step={1}
+            className="w-full [&>span:first-child]:bg-gray-200 [&_[role=slider]]:bg-gray-900 [&_[role=slider]]:border-gray-900"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>0px (Square)</span>
+            <span>100px (Rounded)</span>
+          </div>
+        </div>
+
         {/* Dimensions Info */}
         <div className="bg-gray-50 p-3 rounded-lg">
           <div className="text-xs text-gray-600 space-y-1">
             <div className="flex justify-between">
               <span>Canvas Size:</span>
               <span className="font-mono">{sizing.width} × {sizing.height}px</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Border Radius:</span>
+              <span className="font-mono">{sizing.borderRadius}px</span>
             </div>
             <div className="flex justify-between">
               <span>Aspect Ratio:</span>

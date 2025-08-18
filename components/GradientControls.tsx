@@ -47,7 +47,7 @@ export default function GradientControls({ gradient, onGradientChange }: Gradien
         <div className="space-y-4">
           <h4 className="text-sm font-medium text-gray-800 mb-3">Colors</h4>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="start-color" className="text-xs font-medium text-gray-700">
                 Start Color

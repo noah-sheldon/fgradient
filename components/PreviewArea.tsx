@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Copy, Check } from 'lucide-react';
 import { PreviewAreaProps } from '@/types';
 import html2canvas from 'html2canvas';
 
@@ -14,6 +14,7 @@ export default function PreviewArea({
   onDownload 
 }: PreviewAreaProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
 
   const generateGradientStyle = () => {
     const direction = gradient.direction === 'custom' 
@@ -24,11 +25,12 @@ export default function PreviewArea({
       background: `linear-gradient(${direction}, ${gradient.startColor}, ${gradient.midColor}, ${gradient.endColor})`,
       width: `${sizing.width}px`,
       height: `${sizing.height}px`,
+      borderRadius: `${sizing.borderRadius}px`,
     };
   };
 
-  const handleDownload = async () => {
-    if (!canvasRef.current) return;
+  const generateCanvas = async () => {
+    if (!canvasRef.current) return null;
 
     try {
       const canvas = await html2canvas(canvasRef.current, {
@@ -39,18 +41,52 @@ export default function PreviewArea({
         useCORS: true,
         allowTaint: false,
       });
-
-      const link = document.createElement('a');
-      link.download = `gradient-image-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      onDownload();
+      return canvas;
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error('Error generating canvas:', error);
+      return null;
+    }
+  };
+
+  const handleDownload = async () => {
+    const canvas = await generateCanvas();
+    if (!canvas) {
       alert('Failed to generate image. Please try again.');
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.download = `gradient-image-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    onDownload();
+  };
+
+  const handleCopyToClipboard = async () => {
+    const canvas = await generateCanvas();
+    if (!canvas) {
+      alert('Failed to generate image. Please try again.');
+      return;
+    }
+
+    try {
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'image/png': blob
+            })
+          ]);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
+      });
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      alert('Failed to copy image. Your browser might not support this feature.');
     }
   };
 
@@ -58,14 +94,25 @@ export default function PreviewArea({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Live Preview</h3>
-        <Button 
-          onClick={handleDownload}
-          disabled={!imageSrc}
-          className="bg-gray-900 hover:bg-gray-800 text-white disabled:bg-gray-400"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download Image
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={handleCopyToClipboard}
+            disabled={!imageSrc}
+            variant="outline"
+            className="disabled:bg-gray-100"
+          >
+            {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+            {copied ? 'Copied!' : 'Copy'}
+          </Button>
+          <Button 
+            onClick={handleDownload}
+            disabled={!imageSrc}
+            className="bg-gray-900 hover:bg-gray-800 text-white disabled:bg-gray-400"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Image
+          </Button>
+        </div>
       </div>
 
       <Card className="p-6 border border-gray-200">
@@ -84,6 +131,7 @@ export default function PreviewArea({
                   style={{
                     maxWidth: `${sizing.width}px`,
                     maxHeight: `${sizing.height}px`,
+                    borderRadius: `${sizing.borderRadius}px`,
                   }}
                 />
               ) : (

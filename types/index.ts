@@ -10,6 +10,7 @@ export interface SizingConfig {
   width: number;
   height: number;
   lockAspectRatio: boolean;
+  borderRadius: number;
 }
 
 export interface ImageUploadProps {

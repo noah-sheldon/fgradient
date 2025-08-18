@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { Upload, Image as ImageIcon, Clipboard } from 'lucide-react';
 import { ImageUploadProps } from '@/types';
 
 export default function ImageUploader({ onImageUpload, imageSrc }: ImageUploadProps) {
@@ -14,6 +14,29 @@ export default function ImageUploader({ onImageUpload, imageSrc }: ImageUploadPr
       onImageUpload(file);
     }
   }, [onImageUpload]);
+
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          handleFileSelect(file);
+          break;
+        }
+      }
+    }
+  }, [handleFileSelect]);
+
+  useEffect(() => {
+    document.addEventListener('paste', handlePaste);
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [handlePaste]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -41,6 +64,26 @@ export default function ImageUploader({ onImageUpload, imageSrc }: ImageUploadPr
     const file = e.target.files?.[0];
     if (file) {
       handleFileSelect(file);
+    }
+  };
+
+  const handlePasteClick = async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith('image/')) {
+            const blob = await item.getType(type);
+            const file = new File([blob], 'pasted-image.png', { type });
+            handleFileSelect(file);
+            return;
+          }
+        }
+      }
+      alert('No image found in clipboard');
+    } catch (error) {
+      console.error('Error reading clipboard:', error);
+      alert('Failed to read clipboard. Try using Ctrl+V or Cmd+V instead.');
     }
   };
 
@@ -73,17 +116,17 @@ export default function ImageUploader({ onImageUpload, imageSrc }: ImageUploadPr
             <div className="flex flex-col items-center space-y-2">
               <ImageIcon className="w-12 h-12 text-gray-600" />
               <p className="text-sm font-medium text-gray-700">Image uploaded successfully!</p>
-              <p className="text-xs text-gray-500">Drag a new image or click to replace</p>
+              <p className="text-xs text-gray-500">Drag a new image, click to replace, or paste from clipboard</p>
             </div>
           ) : (
             <>
               <Upload className="w-12 h-12 text-gray-400" />
               <div className="space-y-1">
                 <p className="text-sm font-medium text-gray-600">
-                  Drag and drop an image here, or click to browse
+                  Drag and drop an image here, click to browse, or paste from clipboard
                 </p>
                 <p className="text-xs text-gray-500">
-                  Supports JPG, JPEG, PNG, WebP
+                  Supports JPG, JPEG, PNG, WebP • Use Ctrl+V or Cmd+V to paste
                 </p>
               </div>
             </>
@@ -91,14 +134,24 @@ export default function ImageUploader({ onImageUpload, imageSrc }: ImageUploadPr
         </div>
       </Card>
       
-      <Button 
-        onClick={() => document.getElementById('image-upload')?.click()}
-        className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-        size="lg"
-      >
-        <Upload className="w-4 h-4 mr-2" />
-        Upload Image
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button 
+          onClick={() => document.getElementById('image-upload')?.click()}
+          className="bg-gray-900 hover:bg-gray-800 text-white"
+          size="lg"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Upload Image
+        </Button>
+        <Button 
+          onClick={handlePasteClick}
+          variant="outline"
+          size="lg"
+        >
+          <Clipboard className="w-4 h-4 mr-2" />
+          Paste Image
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import ImageUploader from '@/components/ImageUploader';
 import GradientControls from '@/components/GradientControls';
 import SizingControls from '@/components/SizingControls';
@@ -13,6 +13,7 @@ export default function Home() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [originalAspectRatio, setOriginalAspectRatio] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
   const [gradient, setGradient] = useState<GradientConfig>({
     startColor: '#14b8a6',
@@ -26,7 +27,35 @@ export default function Home() {
     width: 800,
     height: 600,
     lockAspectRatio: false,
+    borderRadius: 0,
   });
+
+  // Load from localStorage after client-side hydration
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('fgradient-sizing');
+        if (saved) {
+          const parsedSizing = JSON.parse(saved);
+          setSizing(parsedSizing);
+        }
+      } catch (error) {
+        console.warn('Failed to load sizing from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Save sizing to localStorage whenever it changes (only on client)
+  useEffect(() => {
+    if (isClient && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('fgradient-sizing', JSON.stringify(sizing));
+      } catch (error) {
+        console.warn('Failed to save sizing to localStorage:', error);
+      }
+    }
+  }, [sizing, isClient]);
 
   const handleImageUpload = useCallback((file: File) => {
     const reader = new FileReader();
@@ -39,20 +68,11 @@ export default function Home() {
       img.onload = () => {
         const aspectRatio = img.width / img.height;
         setOriginalAspectRatio(aspectRatio);
-        
-        // Optionally set initial sizing based on image
-        if (!sizing.lockAspectRatio) {
-          setSizing(prev => ({
-            ...prev,
-            width: Math.min(800, img.width),
-            height: Math.min(600, img.height),
-          }));
-        }
       };
       img.src = result;
     };
     reader.readAsDataURL(file);
-  }, [sizing.lockAspectRatio]);
+  }, []);
 
   const handleDownload = useCallback(() => {
     console.log('Image downloaded successfully');
@@ -61,7 +81,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="bg-gray-900 text-white shadow-sm">
+      <header className="bg-white text-gray-900 shadow-sm border-b border-gray-200">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -69,8 +89,8 @@ export default function Home() {
                 <span className="text-white font-bold text-sm">fg</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">fgradient</h1>
-                <p className="text-sm text-gray-300 hidden sm:block">Create beautiful gradient backgrounds for your images</p>
+                <h1 className="text-xl font-bold text-gray-900">fgradient</h1>
+                <p className="text-sm text-gray-600 hidden sm:block">Create beautiful gradient backgrounds for your images</p>
               </div>
             </div>
             
@@ -78,7 +98,7 @@ export default function Home() {
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden text-white hover:bg-gray-800"
+              className="lg:hidden text-gray-900 hover:bg-gray-100"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -134,13 +154,6 @@ export default function Home() {
             />
           </div>
           
-          {/* Made in Bolt Badge */}
-          <div className="absolute bottom-6 right-6">
-            <div className="bg-black text-white px-3 py-2 rounded-lg text-xs font-medium flex items-center space-x-2">
-              <span>⚡</span>
-              <span>Made in Bolt</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
