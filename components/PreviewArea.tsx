@@ -127,10 +127,10 @@ export default function PreviewArea({
                 <img
                   src={imageSrc}
                   alt="Uploaded"
-                  className="max-w-full max-h-full object-contain"
+                  className="object-contain p-4"
                   style={{
-                    maxWidth: `${sizing.width}px`,
-                    maxHeight: `${sizing.height}px`,
+                    width: `${sizing.width}px`,
+                    height: `${sizing.height}px`,
                     borderRadius: `${sizing.borderRadius}px`,
                   }}
                 />
@@ -142,6 +142,13 @@ export default function PreviewArea({
                   <p className="text-sm font-medium">Upload an image to preview</p>
                 </div>
               )}
+              
+              {/* Watermark */}
+              <div className="absolute bottom-2 right-2">
+                <div className="bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                  made with fgradient
+                </div>
+              </div>
             </div>
           </div>
         </div>

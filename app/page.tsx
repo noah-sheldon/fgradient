@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import ImageUploader from '@/components/ImageUploader';
 import GradientControls from '@/components/GradientControls';
 import SizingControls from '@/components/SizingControls';
 import PreviewArea from '@/components/PreviewArea';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Book, FileText } from 'lucide-react';
 import { GradientConfig, SizingConfig } from '@/types';
 
 export default function Home() {
@@ -93,6 +94,24 @@ export default function Home() {
                 <p className="text-sm text-gray-600 hidden sm:block">Create beautiful gradient backgrounds for your images</p>
               </div>
             </div>
+            
+            {/* Navigation Links */}
+            <nav className="hidden md:flex items-center space-x-6">
+              <Link 
+                href="/blogs" 
+                className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Blog</span>
+              </Link>
+              <Link 
+                href="/docs" 
+                className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Book className="w-4 h-4" />
+                <span>Docs</span>
+              </Link>
+            </nav>
             
             {/* Mobile menu button */}
             <Button
