@@ -144,7 +144,7 @@ export default function PreviewArea({
               )}
               
               {/* Watermark */}
-              <div className="absolute bottom-4 right-4">
+              <div className="absolute bottom-4 right-8">
                 <div className="bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
                   made with fgradient
                 </div>
