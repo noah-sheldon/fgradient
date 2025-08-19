@@ -135,6 +135,28 @@ export default function Home() {
           fixed lg:static inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200
           lg:flex lg:flex-col overflow-y-auto
         `}>
+          {/* Mobile Navigation Links */}
+          <div className="lg:hidden border-b border-gray-200 p-4">
+            <nav className="space-y-2">
+              <Link 
+                href="/blogs" 
+                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors py-2"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Blog</span>
+              </Link>
+              <Link 
+                href="/docs" 
+                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors py-2"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Book className="w-4 h-4" />
+                <span>Docs</span>
+              </Link>
+            </nav>
+          </div>
+
           <div className="flex-1 p-6 space-y-6">
             <ImageUploader 
               onImageUpload={handleImageUpload} 
