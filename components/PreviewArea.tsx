@@ -32,19 +32,18 @@ export default function PreviewArea({
     if (!canvasRef.current) return null;
 
     try {
-      const scale = window.devicePixelRatio || 2;
       const outputCanvas = document.createElement('canvas');
       const ctx = outputCanvas.getContext('2d');
       
-      outputCanvas.width = sizing.width * scale;
-      outputCanvas.height = sizing.height * scale;
+      outputCanvas.width = sizing.width;
+      outputCanvas.height = sizing.height;
       
       if (!ctx) return null;
 
       // Apply border radius clipping
       if (sizing.borderRadius > 0) {
         ctx.beginPath();
-        const radius = sizing.borderRadius * scale;
+        const radius = sizing.borderRadius;
         ctx.roundRect(0, 0, outputCanvas.width, outputCanvas.height, radius);
         ctx.clip();
       }
@@ -64,13 +63,13 @@ export default function PreviewArea({
 
       const radians = (direction * Math.PI) / 180;
       const gradientLength = Math.abs(sizing.width * Math.cos(radians)) + Math.abs(sizing.height * Math.sin(radians));
-      const centerX = (sizing.width * scale) / 2;
-      const centerY = (sizing.height * scale) / 2;
+      const centerX = sizing.width / 2;
+      const centerY = sizing.height / 2;
       
-      const startX = centerX - (gradientLength * scale * Math.cos(radians)) / 2;
-      const startY = centerY - (gradientLength * scale * Math.sin(radians)) / 2;
-      const endX = centerX + (gradientLength * scale * Math.cos(radians)) / 2;
-      const endY = centerY + (gradientLength * scale * Math.sin(radians)) / 2;
+      const startX = centerX - (gradientLength * Math.cos(radians)) / 2;
+      const startY = centerY - (gradientLength * Math.sin(radians)) / 2;
+      const endX = centerX + (gradientLength * Math.cos(radians)) / 2;
+      const endY = centerY + (gradientLength * Math.sin(radians)) / 2;
 
       const grad = ctx.createLinearGradient(startX, startY, endX, endY);
       grad.addColorStop(0, gradient.startColor);
@@ -92,7 +91,7 @@ export default function PreviewArea({
         });
 
         // Calculate scaling to fit within canvas with padding (like object-contain)
-        const padding = 16 * scale; // 4px padding * 4 sides
+        const padding = 16; // 4px padding * 4 sides
         const availableWidth = outputCanvas.width - padding;
         const availableHeight = outputCanvas.height - padding;
         
@@ -113,17 +112,17 @@ export default function PreviewArea({
       // Add watermark
       ctx.save();
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.font = `${12 * scale}px Arial`;
+      ctx.font = '12px Arial';
       const watermarkText = 'made with fgradient';
       const textMetrics = ctx.measureText(watermarkText);
-      const watermarkWidth = textMetrics.width + (16 * scale);
-      const watermarkHeight = 24 * scale;
-      const watermarkX = outputCanvas.width - watermarkWidth - (32 * scale);
-      const watermarkY = outputCanvas.height - watermarkHeight - (16 * scale);
+      const watermarkWidth = textMetrics.width + 16;
+      const watermarkHeight = 24;
+      const watermarkX = outputCanvas.width - watermarkWidth - 32;
+      const watermarkY = outputCanvas.height - watermarkHeight - 16;
       
       // Draw watermark background
       ctx.beginPath();
-      ctx.roundRect(watermarkX, watermarkY, watermarkWidth, watermarkHeight, 4 * scale);
+      ctx.roundRect(watermarkX, watermarkY, watermarkWidth, watermarkHeight, 4);
       ctx.fill();
       
       // Draw watermark text
