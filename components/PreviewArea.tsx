@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Copy, Check } from 'lucide-react';
 import { PreviewAreaProps } from '@/types';
-import html2canvas from 'html2canvas';
 
 export default function PreviewArea({ 
   imageSrc, 
@@ -33,24 +32,106 @@ export default function PreviewArea({
     if (!canvasRef.current) return null;
 
     try {
-      const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: null,
-        width: sizing.width,
-        height: sizing.height,
-        scale: window.devicePixelRatio || 2,
-        useCORS: true,
-        allowTaint: false,
-      });
-      
-      // Create a new canvas with exact user-specified dimensions
+      const scale = window.devicePixelRatio || 2;
       const outputCanvas = document.createElement('canvas');
       const ctx = outputCanvas.getContext('2d');
-      outputCanvas.width = sizing.width * (window.devicePixelRatio || 2);
-      outputCanvas.height = sizing.height * (window.devicePixelRatio || 2);
       
-      if (ctx) {
-        ctx.drawImage(canvas, 0, 0, outputCanvas.width, outputCanvas.height);
+      outputCanvas.width = sizing.width * scale;
+      outputCanvas.height = sizing.height * scale;
+      
+      if (!ctx) return null;
+
+      // Apply border radius clipping
+      if (sizing.borderRadius > 0) {
+        ctx.beginPath();
+        const radius = sizing.borderRadius * scale;
+        ctx.roundRect(0, 0, outputCanvas.width, outputCanvas.height, radius);
+        ctx.clip();
       }
+
+      // Create gradient background
+      const direction = gradient.direction === 'custom' 
+        ? gradient.customDegree 
+        : gradient.direction === 'to right' ? 0
+        : gradient.direction === 'to left' ? 180  
+        : gradient.direction === 'to bottom' ? 90
+        : gradient.direction === 'to top' ? 270
+        : gradient.direction === 'to bottom right' ? 45
+        : gradient.direction === 'to bottom left' ? 135
+        : gradient.direction === 'to top right' ? 315
+        : gradient.direction === 'to top left' ? 225
+        : 0;
+
+      const radians = (direction * Math.PI) / 180;
+      const gradientLength = Math.abs(sizing.width * Math.cos(radians)) + Math.abs(sizing.height * Math.sin(radians));
+      const centerX = (sizing.width * scale) / 2;
+      const centerY = (sizing.height * scale) / 2;
+      
+      const startX = centerX - (gradientLength * scale * Math.cos(radians)) / 2;
+      const startY = centerY - (gradientLength * scale * Math.sin(radians)) / 2;
+      const endX = centerX + (gradientLength * scale * Math.cos(radians)) / 2;
+      const endY = centerY + (gradientLength * scale * Math.sin(radians)) / 2;
+
+      const grad = ctx.createLinearGradient(startX, startY, endX, endY);
+      grad.addColorStop(0, gradient.startColor);
+      grad.addColorStop(0.5, gradient.midColor);
+      grad.addColorStop(1, gradient.endColor);
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+      // Draw image with proper scaling and positioning if exists
+      if (imageSrc) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = imageSrc;
+        });
+
+        // Calculate scaling to fit within canvas with padding (like object-contain)
+        const padding = 16 * scale; // 4px padding * 4 sides
+        const availableWidth = outputCanvas.width - padding;
+        const availableHeight = outputCanvas.height - padding;
+        
+        const scaleX = availableWidth / img.naturalWidth;
+        const scaleY = availableHeight / img.naturalHeight;
+        const imageScale = Math.min(scaleX, scaleY, 1); // Don't upscale
+        
+        const scaledWidth = img.naturalWidth * imageScale;
+        const scaledHeight = img.naturalHeight * imageScale;
+        
+        // Center the scaled image
+        const imgX = (outputCanvas.width - scaledWidth) / 2;
+        const imgY = (outputCanvas.height - scaledHeight) / 2;
+        
+        ctx.drawImage(img, imgX, imgY, scaledWidth, scaledHeight);
+      }
+
+      // Add watermark
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.font = `${12 * scale}px Arial`;
+      const watermarkText = 'made with fgradient';
+      const textMetrics = ctx.measureText(watermarkText);
+      const watermarkWidth = textMetrics.width + (16 * scale);
+      const watermarkHeight = 24 * scale;
+      const watermarkX = outputCanvas.width - watermarkWidth - (32 * scale);
+      const watermarkY = outputCanvas.height - watermarkHeight - (16 * scale);
+      
+      // Draw watermark background
+      ctx.beginPath();
+      ctx.roundRect(watermarkX, watermarkY, watermarkWidth, watermarkHeight, 4 * scale);
+      ctx.fill();
+      
+      // Draw watermark text
+      ctx.fillStyle = 'white';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(watermarkText, watermarkX + watermarkWidth / 2, watermarkY + watermarkHeight / 2);
+      ctx.restore();
       
       return outputCanvas;
     } catch (error) {
@@ -140,9 +221,8 @@ export default function PreviewArea({
                   alt="Uploaded"
                   className="object-contain p-4"
                   style={{
-                    width: `${sizing.width}px`,
-                    height: `${sizing.height}px`,
-                    borderRadius: `${sizing.borderRadius}px`,
+                    maxWidth: `${sizing.width - 32}px`,
+                    maxHeight: `${sizing.height - 32}px`,
                   }}
                 />
               ) : (
