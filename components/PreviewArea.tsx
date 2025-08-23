@@ -37,11 +37,22 @@ export default function PreviewArea({
         backgroundColor: null,
         width: sizing.width,
         height: sizing.height,
-        scale: 1,
+        scale: window.devicePixelRatio || 2,
         useCORS: true,
         allowTaint: false,
       });
-      return canvas;
+      
+      // Create a new canvas with exact user-specified dimensions
+      const outputCanvas = document.createElement('canvas');
+      const ctx = outputCanvas.getContext('2d');
+      outputCanvas.width = sizing.width * (window.devicePixelRatio || 2);
+      outputCanvas.height = sizing.height * (window.devicePixelRatio || 2);
+      
+      if (ctx) {
+        ctx.drawImage(canvas, 0, 0, outputCanvas.width, outputCanvas.height);
+      }
+      
+      return outputCanvas;
     } catch (error) {
       console.error('Error generating canvas:', error);
       return null;
